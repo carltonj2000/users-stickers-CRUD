@@ -59,7 +59,7 @@ router.post("/login", (req, res, next) => {
               signed: true,
               secure: isSecure
             });
-            res.json({ message: "✅ valid login" });
+            res.json({ id: user.id, message: "✅ valid login" });
           } else next(new Error("❌ password invalid"));
         });
       } else {

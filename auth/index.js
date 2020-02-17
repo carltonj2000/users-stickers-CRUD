@@ -17,6 +17,15 @@ const validUser = user => {
   return validEmail && validPassword;
 };
 
+function setUserIdCookie(req, res, id) {
+  const isSecure = req.app.get("env") !== "development";
+  res.cookie("user_id", id, {
+    httpOnly: true,
+    signed: true,
+    secure: isSecure
+  });
+}
+
 router.post("/signup", (req, res, next) => {
   if (validUser(req.body)) {
     const { password, email } = req.body;
@@ -29,12 +38,13 @@ router.post("/signup", (req, res, next) => {
             password: hash,
             created_at: new Date(),
             is_active: true
-          }).then(id =>
+          }).then(id => {
+            setUserIdCookie(req, res, id);
             res.json({
               message: "✅ email not being used",
               id
-            })
-          );
+            });
+          });
         });
       } else {
         res.json({ user, message: "❌ email being used" });
@@ -53,22 +63,27 @@ router.post("/login", (req, res, next) => {
         bcrypt.compare(password, user.password, (err, valid) => {
           if (err) return next(new Error("Bcrypt compare failed"));
           if (valid) {
-            const isSecure = req.app.get("env") !== "development";
-            res.cookie("user_id", user.id, {
-              httpOnly: true,
-              signed: true,
-              secure: isSecure
-            });
+            setUserIdCookie(req, res, user.id);
             res.json({ id: user.id, message: "✅ valid login" });
-          } else next(new Error("❌ password invalid"));
+          } else {
+            res.status(401);
+            next(new Error("❌ password invalid"));
+          }
         });
       } else {
+        res.status(401);
         next(new Error("❌ email invalid"));
       }
     });
   } else {
+    res.status(401);
     next(new Error("Invalid user"));
   }
+});
+
+router.get("/logout", (req, res, next) => {
+  res.clearCookie("user_id");
+  res.json({ message: "🔐 logged out" });
 });
 
 module.exports = router;

@@ -1,9 +1,11 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const User = require('../db/user');
-const Sticker = require('../db/sticker');
+const User = require("../db/user");
+const Sticker = require("../db/sticker");
 
-router.get('/:id', (req, res) => {
+var authMiddleware = require("../auth/middleware");
+
+router.get("/:id", authMiddleware.allowAccess, (req, res) => {
   if (!isNaN(req.params.id)) {
     User.getOne(req.params.id).then(user => {
       if (user) {
@@ -18,7 +20,7 @@ router.get('/:id', (req, res) => {
   }
 });
 
-router.get('/:id/sticker', (req,res)=>{
+router.get("/:id/sticker", authMiddleware.allowAccess, (req, res) => {
   if (!isNaN(req.params.id)) {
     Sticker.getByUser(req.params.id).then(stickers => {
       res.json(stickers);
@@ -26,11 +28,11 @@ router.get('/:id/sticker', (req,res)=>{
   } else {
     resError(res, 500, "Invalid ID");
   }
-})
+});
 
 function resError(res, statusCode, message) {
   res.status(statusCode);
-  res.json({message});
+  res.json({ message });
 }
 
 module.exports = router;

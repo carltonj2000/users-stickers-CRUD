@@ -9,6 +9,7 @@ var cors = require("cors");
 var index = require("./routes/index");
 var user = require("./routes/user");
 var auth = require("./auth");
+var authMiddleware = require("./auth/middleware");
 
 var app = express();
 
@@ -26,7 +27,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(cors({ credentials: true, origin: "http://localhost:8080" }));
 
 app.use("/", index);
-app.use("/user", user);
+app.use("/user", authMiddleware.ensureLoggedIn, user);
 app.use("/auth", auth);
 
 // catch 404 and forward to error handler
@@ -43,7 +44,7 @@ app.use(function(err, req, res, next) {
   res.locals.error = req.app.get("env") === "development" ? err : {};
 
   // render the error page
-  res.status(err.status || 500);
+  res.status(err.status || res.statusCode || 500);
   // res.render("error");
 
   res.json({
